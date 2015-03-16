@@ -1,6 +1,6 @@
 Django>=1.5.0,<1.7
 PyYAML
-South
+South>=1.0.2
 Sphinx
 coverage
 gnureadline

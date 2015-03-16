@@ -19,14 +19,14 @@ setup(
     packages=[
         "weeny",
         "weeny.forms",
-        "weeny.migrations",
+        "weeny.south_migrations",
         "weeny.tests"
     ],
     include_package_data=True,
     install_requires=[
         "Django>=1.5.0",
+        "South>=1.0.2",
         "PyYAML",
-        "South",
         "ua-parser",
         "user-agents"
     ],
