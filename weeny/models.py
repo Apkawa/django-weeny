@@ -201,8 +201,8 @@ class URLTracking(models.Model):
 
     url = models.ForeignKey(WeenyURL)
     weeny_site = models.ForeignKey(WeenySite)
-    weeny_url = models.CharField(max_length=255)
-    target_url = models.CharField(max_length=255)
+    weeny_url = models.CharField(max_length=1024)
+    target_url = models.CharField(max_length=4096)
     ip_address = models.IPAddressField()
     user_agent = models.ForeignKey(UserAgent)
     timestamp = models.DateTimeField(auto_now_add=True)
