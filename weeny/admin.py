@@ -45,13 +45,13 @@ class WeenyURLAdmin(admin.ModelAdmin):
     form = WeenyURLAdminForm
     readonly_fields = ["urlcode", "is_visited", "created", "modified"]
     list_display = ["weeny_url", "redirect_url", "is_active", "is_private",
-                    "content_type", "content_object", "weeny_site", "target_site"]
+                    "content_type", "content_object",'raw_url', "weeny_site", "target_site", ]
     list_filter = ["weeny_site__site", "weeny_site", "is_active", "is_visited", "is_private"]
     search_fields = ["urlcode"]
 
     fieldsets = (
         (None, {
-            "fields": ("weeny_site", "content_type", "object_id",
+            "fields": ("weeny_site", "content_type", "object_id", 'raw_url',
                        "is_visited", "urlcode", "created", "modified")
         }),
         ("Privacy", {

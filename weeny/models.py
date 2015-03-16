@@ -73,9 +73,12 @@ class WeenyURL(models.Model):
     """
 
     content_type = models.ForeignKey(ContentType, verbose_name=_("content type"),
-                                     related_name="contenttype_set_for_%(class)s")
-    object_id = models.PositiveIntegerField()
+                                     related_name="contenttype_set_for_%(class)s", null=True, blank=True)
+    object_id = models.PositiveIntegerField(null=True, blank=True)
     content_object = generic.GenericForeignKey("content_type", "object_id")
+
+    raw_url = models.URLField(null=True, blank=True)
+
     weeny_site = models.ForeignKey(WeenySite, help_text=_("A site which resolves to your short domain name."))
     urlcode = models.CharField(max_length=10, db_index=True, blank=True, verbose_name=_("URL code"),
                                help_text=_("This code will be appended to the weeny domain to "
@@ -107,8 +110,18 @@ class WeenyURL(models.Model):
         from django.core.urlresolvers import reverse_lazy
         return reverse_lazy("weeny_urlredirect_view", kwargs={"urlcode": self.urlcode})
 
+
+    def save(self, *args, **kwargs):
+        super(WeenyURL, self).save(*args, **kwargs)
+        if not self.urlcode:
+            self.urlcode = self.build_urlcode()
+            self.save()
+
     @property
     def redirect_url(self):
+        if self.raw_url:
+            return self.raw_url
+
         return "{protocol}://{domain}{uri}".format(
             protocol=self.weeny_site.protocol,
             domain=self.weeny_site.short_domain if self.weeny_site.redirect_short_domain
@@ -117,12 +130,15 @@ class WeenyURL(models.Model):
         )
 
     def clean(self):
-        if not hasattr(self.content_object, "get_absolute_url"):
-            raise ValidationError(_(
-                "%(cls)r has no `get_absolute_url` method. In order to use django-weeny, "
-                "all target objects needs to have a resolvable url. Please implement a `get_absolute_url`"
-                "method on %(cls)r in order to target this object." % {"cls": self.content_object.__class__}
-            ))
+        if not self.raw_url and not self.object_id:
+            raise ValidationError(_("Object required"))
+        if not self.raw_url:
+            if not hasattr(self.content_object, "get_absolute_url"):
+                raise ValidationError(_(
+                    "%(cls)r has no `get_absolute_url` method. In order to use django-weeny, "
+                    "all target objects needs to have a resolvable url. Please implement a `get_absolute_url`"
+                    "method on %(cls)r in order to target this object." % {"cls": self.content_object.__class__}
+                ))
 
         if self.is_private:
             if not self.password:
@@ -131,6 +147,24 @@ class WeenyURL(models.Model):
 
         if self.password and not self.is_private:
             raise ValidationError(_("You can't set password on public URL's!"))
+
+
+    def build_urlcode(self):
+        # Hacky and expensive solution to update the model without
+        # firing the post_save signal again (which will lead to an infinity loop).
+        token = 0
+        for digit in str(self.pk):
+            token = token * len(BASE62) + BASE62.index(digit)
+
+        if token == 0:
+            code = self.weeny_site.seed[0]
+        else:
+            code = ""
+            while token > 0:
+                digit = token % len(self.weeny_site.seed)
+                code = self.weeny_site.seed[digit] + code
+                token = int(token / len(self.weeny_site.seed))
+        return code
 
 
 class UserAgent(models.Model):
@@ -181,31 +215,15 @@ class URLTracking(models.Model):
         return "{weeny_url} - {ip_address}".format(weeny_url=self.weeny_url, ip_address=self.ip_address)
 
 
-@receiver(signals.post_save, sender=WeenyURL)
-def post_save_callback(sender, instance, **kwargs):
-    """
-    Catch model post-save and create the URL code.
-
-    Disclaimer: This algorithm is shamelessy "stolen" from Drew Perttula!
-        http://code.activestate.com/recipes/111286/
-    """
-
-    token = 0
-    for digit in str(instance.pk):
-        token = token * len(BASE62) + BASE62.index(digit)
-
-    if token == 0:
-        code = instance.weeny_site.seed[0]
-    else:
-        code = ""
-        while token > 0:
-            digit = token % len(instance.weeny_site.seed)
-            code = instance.weeny_site.seed[digit] + code
-            token = int(token / len(instance.weeny_site.seed))
-
-    # Hacky and expensive solution to update the model without
-    # firing the post_save signal again (which will lead to an infinity loop).
-    sender.objects.filter(pk=instance.pk).update(urlcode=code)
+# @receiver(signals.post_save, sender=WeenyURL)
+# def post_save_callback(sender, instance, **kwargs):
+#     """
+#     Catch model post-save and create the URL code.
+#
+#     Disclaimer: This algorithm is shamelessy "stolen" from Drew Perttula!
+#         http://code.activestate.com/recipes/111286/
+#     """
+#     sender.objects.filter(pk=instance.pk).update(urlcode=instance.build_urlcode())
 
 
 @receiver(signals.pre_delete, dispatch_uid="delete_weeny_url")

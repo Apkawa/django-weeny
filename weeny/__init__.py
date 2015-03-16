@@ -50,3 +50,6 @@ class _WeenyLogger(object):
 
 # Global logger
 logger = _WeenyLogger.get_logger()
+
+
+

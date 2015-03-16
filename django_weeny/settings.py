@@ -85,3 +85,8 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+
+SOUTH_MIGRATION_MODULES = {
+    'weeny': 'weeny.south_migrations',
+}
+
