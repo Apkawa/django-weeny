@@ -77,7 +77,7 @@ class WeenyURL(models.Model):
     object_id = models.PositiveIntegerField(null=True, blank=True)
     content_object = generic.GenericForeignKey("content_type", "object_id")
 
-    raw_url = models.URLField(null=True, blank=True)
+    raw_url = models.URLField(null=True, blank=True, max_length=4096)
 
     weeny_site = models.ForeignKey(WeenySite, help_text=_("A site which resolves to your short domain name."))
     urlcode = models.CharField(max_length=10, db_index=True, blank=True, verbose_name=_("URL code"),
