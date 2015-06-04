@@ -20,6 +20,7 @@ class WeenyURLAdminForm(forms.ModelForm):
 
     class Meta:
         model = WeenyURL
+        exclude = ['created', 'modified']
         widgets = {
             "password": PasswordInput(render_value=True)
         }
