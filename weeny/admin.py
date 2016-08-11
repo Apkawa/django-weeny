@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
 
 from django.contrib import admin
-from django.contrib.contenttypes.generic import GenericTabularInline
+try:
+    from django.contrib.contenttypes.generic import GenericTabularInline
+except ImportError:
+    # Dj >=1.9
+    from django.contrib.contenttypes.admin import GenericTabularInline
 
 from weeny.forms.admin import WeenyURLAdminForm
 from weeny.models import WeenySite, WeenyURL, URLTracking, UserAgent

@@ -11,7 +11,11 @@ from django.db.models import signals
 from django.core.exceptions import ValidationError
 from django.contrib.auth.hashers import make_password
 from django.contrib.sites.models import Site
-from django.contrib.contenttypes import generic
+try:
+    from django.contrib.contenttypes.generic import GenericForeignKey
+except ImportError:
+    # >= 1.8
+    from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.dispatch import receiver
 from django.utils.translation import ugettext_lazy as _
@@ -75,7 +79,8 @@ class WeenyURL(models.Model):
     content_type = models.ForeignKey(ContentType, verbose_name=_("content type"),
                                      related_name="contenttype_set_for_%(class)s", null=True, blank=True)
     object_id = models.PositiveIntegerField(null=True, blank=True)
-    content_object = generic.GenericForeignKey("content_type", "object_id")
+
+    content_object = GenericForeignKey("content_type", "object_id")
 
     raw_url = models.URLField(null=True, blank=True, max_length=4096)
 

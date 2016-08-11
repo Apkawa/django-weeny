@@ -3,7 +3,8 @@
 from __future__ import unicode_literals
 
 from django import http
-from django.contrib.sites.models import get_current_site
+from django.contrib.sites.shortcuts import get_current_site
+
 from django.core.urlresolvers import reverse_lazy
 from django.views.generic import RedirectView, FormView
 from django.views.generic.detail import SingleObjectMixin
@@ -45,10 +46,10 @@ class URLRedirectView(SingleObjectMixin, FormView, RedirectView):
                     return http.HttpResponseRedirect(url)
             else:
                 logger.warning("Gone: %s", self.request.path,
-                               extra={
-                                   "status_code": 410,
-                                   "request": self.request
-                               })
+                    extra={
+                        "status_code": 410,
+                        "request": self.request
+                    })
                 return http.HttpResponseGone()
 
     def get_form_kwargs(self):
